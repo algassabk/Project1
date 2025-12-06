@@ -1,5 +1,6 @@
 package com.acmebank.model;
 
+import java.util.ArrayList;   //  added
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -15,7 +16,12 @@ public class Main {
         Customer customer = new Customer("C001", "Khadija", customerPwdHash);
         Banker banker     = new Banker("B001", "Ahmed", bankerPwdHash, "Main Branch");
 
-        List<User> users = List.of(customer, banker);
+        // ✅ use modifiable list instead of List.of(...)
+        List<User> users = new ArrayList<>();
+        users.add(customer);
+        users.add(banker);
+
+
 
         Login loginService = new Login(users);
 
@@ -40,7 +46,8 @@ public class Main {
         System.out.println("Welcome " + user.getName() + " (" + user.getRole() + ")");
 
         // 4) Open menu for this user
-        Menu menu = new Menu();
+        // ✅ pass the users list into Menu, so it can add new customers
+        Menu menu = new Menu(users);
         menu.showMainMenu(user);   // This method will decide banker vs customer
     }
 }

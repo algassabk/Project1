@@ -1,85 +1,470 @@
 package com.acmebank.model;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.time.LocalDateTime;
 
 public class Menu {
+
     private final Scanner scanner = new Scanner(System.in);
+    private final List<User> users;   // shared list of all users (bankers + customers)
 
-    // ======================
-    // MAIN MENU (after login)
-    // ======================
+    public Menu(List<User> users) {
+        this.users = users;
+    }
+
     public void showMainMenu(User user) {
-        System.out.println("\n=== Welcome, " + user.getName() + " ===");
-
-        if (user instanceof Banker) {
-            showBankerMenu((Banker) user);
-        } else if (user instanceof Customer) {
-            showCustomerMenu((Customer) user);
+        if (user instanceof Banker banker) {
+            showBankerMenu(banker);
+        } else if (user instanceof Customer customer) {
+            showCustomerMenu(customer);
         }
     }
 
-    // ============
-    // BANKER MENU
-    // ============
+    // ============= BANKER MENU =============
     private void showBankerMenu(Banker banker) {
         while (true) {
             System.out.println("\n--- BANKER MENU ---");
-            System.out.println("1. Add New Customer");
-            System.out.println("2. View Customer Accounts");
+            System.out.println("1. Add new customer");
+            System.out.println("2. View all customers");
             System.out.println("3. Logout");
+            System.out.print("Choice: ");
 
-            System.out.print("Enter choice: ");
-            int ch = scanner.nextInt();
-            scanner.nextLine(); // clean buffer
+            int choice = readInt();
 
-            switch (ch) {
+            switch (choice) {
                 case 1 -> addNewCustomer();
-                case 2 -> viewCustomerAccounts();
+                case 2 -> listCustomers();
                 case 3 -> {
                     System.out.println("Logging out...");
                     return;
                 }
-                default -> System.out.println("Invalid choice.");
+                default -> System.out.println("Invalid choice");
             }
         }
     }
 
     private void addNewCustomer() {
-        System.out.println("[TODO] Add new customer logic will go here.");
+        System.out.println("\n=== Add New Customer ===");
+
+        System.out.print("Enter new customer ID (e.g., C002): ");
+        String id = scanner.nextLine();
+
+        // check if ID already exists
+        boolean exists = users.stream().anyMatch(u -> u.getId().equals(id));
+        if (exists) {
+            System.out.println("A user with this ID already exists.");
+            return;
+        }
+
+        System.out.print("Enter customer name: ");
+        String name = scanner.nextLine();
+
+        System.out.print("Set password for customer: ");
+        String plainPassword = scanner.nextLine();
+        String hash = PasswordHelper.hash(plainPassword);
+
+        Customer newCustomer = new Customer(id, name, hash);
+
+        // choose account type(s)
+        System.out.println("Select account option:");
+        System.out.println("1. Checking only");
+        System.out.println("2. Savings only");
+        System.out.println("3. Both checking and savings");
+        System.out.print("Choice: ");
+        int accChoice = readInt();
+
+        List<Account> createdAccounts = new ArrayList<>();
+
+        if (accChoice == 1 || accChoice == 3) {
+            Account checking = createAccount(AccountType.Checking);
+            newCustomer.addAccount(checking);
+            createdAccounts.add(checking);
+        }
+
+        if (accChoice == 2 || accChoice == 3) {
+            Account savings = createAccount(AccountType.Savings);
+            newCustomer.addAccount(savings);
+            createdAccounts.add(savings);
+        }
+
+        users.add(newCustomer);
+
+        System.out.println("\nCustomer created successfully!");
+        System.out.println("Customer ID: " + newCustomer.getId() + ", Name: " + newCustomer.getName());
+        System.out.println("Accounts:");
+        for (Account acc : createdAccounts) {
+            System.out.println(" - " + acc.getAccountType() + " #" + acc.getAccountNumber()
+                    + " | Balance: " + acc.getBalance()
+                    + " | Card: " + acc.getCardType().getDisplayName());
+        }
     }
 
-    private void viewCustomerAccounts() {
-        System.out.println("[TODO] View accounts logic will go here.");
+    private Account createAccount(AccountType type) {
+        System.out.println("\nCreating " + type + " account...");
+
+        System.out.print("Enter opening balance: ");
+        double openingBalance = readDouble();
+
+        System.out.println("Choose card type:");
+        System.out.println("1. Mastercard Platinum");
+        System.out.println("2. Mastercard Titanium");
+        System.out.println("3. Mastercard");
+        System.out.print("Choice: ");
+        int cardChoice = readInt();
+
+        CardType cardType = switch (cardChoice) {
+            case 1 -> CardType.MastercardPlatinum;
+            case 2 -> CardType.MastercardTitanium;
+            default -> CardType.Mastercard;
+        };
+
+        String accountNumber = generateAccountNumber();
+
+        if (type == AccountType.Checking) {
+            return new CheckingAccount(accountNumber, openingBalance, cardType);
+        } else {
+            return new SavingsAccount(accountNumber, openingBalance, cardType);
+        }
     }
 
-    // ==============
-    // CUSTOMER MENU
-    // ==============
+    private void listCustomers() {
+        System.out.println("\n=== All Customers ===");
+        users.stream()
+                .filter(u -> u instanceof Customer)
+                .map(u -> (Customer) u)
+                .forEach(c -> System.out.println(c.getId() + " - " + c.getName()));
+    }
+
+    // ============= CUSTOMER MENU =============
     private void showCustomerMenu(Customer customer) {
         while (true) {
             System.out.println("\n--- CUSTOMER MENU ---");
-            System.out.println("1. View Balance");
+            System.out.println("1. View balance");
             System.out.println("2. Deposit");
             System.out.println("3. Withdraw");
             System.out.println("4. Transfer");
-            System.out.println("5. View Transactions");
+            System.out.println("5. View transactions");
             System.out.println("6. Logout");
+            System.out.print("Choice: ");
 
-            System.out.print("Enter choice: ");
-            int ch = scanner.nextInt();
-            scanner.nextLine();
+            int choice = readInt();
 
-            switch (ch) {
-                case 1 -> System.out.println("[TODO] Show balance.");
-                case 2 -> System.out.println("[TODO] Deposit.");
-                case 3 -> System.out.println("[TODO] Withdraw.");
-                case 4 -> System.out.println("[TODO] Transfer.");
-                case 5 -> System.out.println("[TODO] Transaction history.");
+            switch (choice) {
+                case 1 -> viewBalance(customer);
+                case 2 -> depositToAccount(customer);
+                case 3 -> withdrawFromAccount(customer);
+                case 4 -> transferMoney(customer);
+                case 5 -> showTransactions(customer);
                 case 6 -> {
                     System.out.println("Logging out...");
                     return;
                 }
-                default -> System.out.println("Invalid choice.");
+                default -> System.out.println("Invalid choice");
             }
         }
     }
+
+    // ===== CUSTOMER ACTIONS =====
+
+    private Account selectAccount(Customer customer) {
+        List<Account> accounts = customer.getAccounts();
+        if (accounts.isEmpty()) {
+            System.out.println("You have no accounts.");
+            return null;
+        }
+        if (accounts.size() == 1) {
+            return accounts.get(0);
+        }
+
+        System.out.println("\nSelect account:");
+        for (int i = 0; i < accounts.size(); i++) {
+            Account acc = accounts.get(i);
+            System.out.println((i + 1) + ". " + acc.getAccountType() +
+                    " #" + acc.getAccountNumber() +
+                    " | Balance: " + acc.getBalance());
+        }
+        System.out.print("Choice: ");
+        int choice = readInt();
+
+        if (choice < 1 || choice > accounts.size()) {
+            System.out.println("Invalid account choice.");
+            return null;
+        }
+        return accounts.get(choice - 1);
+    }
+
+    private void viewBalance(Customer customer) {
+        Account account = selectAccount(customer);
+        if (account == null) return;
+
+        System.out.println("\nAccount: " + account.getAccountType() +
+                " #" + account.getAccountNumber());
+        System.out.println("Current balance: " + account.getBalance());
+        System.out.println("Status: " + (account.isActive() ? "Active" : "Deactivated"));
+    }
+
+    private void depositToAccount(Customer customer) {
+        Account account = selectAccount(customer);
+        if (account == null) return;
+
+        System.out.print("Enter amount to deposit: ");
+        double amount = readDouble();
+
+        try {
+            account.deposit(amount);
+
+            // create transaction
+            Transaction tx = new Transaction(
+                    generateTransactionId(),
+                    null,                                   // fromAccount (null for deposit)
+                    account.getAccountNumber(),             // toAccount
+                    LocalDateTime.now(),
+                    TransactionType.Deposit,
+                    amount,
+                    account.getBalance(),
+                    "Deposit"
+            );
+            account.addTransaction(tx);
+            TransactionFile.appendTransaction(customer, tx);
+
+
+            System.out.println("Deposit successful. New balance: " + account.getBalance());
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+
+    private void withdrawFromAccount(Customer customer) {
+        Account account = selectAccount(customer);
+        if (account == null) return;
+
+        System.out.print("Enter amount to withdraw: ");
+        double amount = readDouble();
+
+        try {
+            account.withdraw(amount);
+
+            Transaction tx = new Transaction(
+                    generateTransactionId(),
+                    account.getAccountNumber(),             // fromAccount
+                    null,                                   // toAccount
+                    LocalDateTime.now(),
+                    TransactionType.Withdraw,
+                    amount,
+                    account.getBalance(),
+                    "Withdraw"
+            );
+            account.addTransaction(tx);
+            TransactionFile.appendTransaction(customer, tx);
+
+            System.out.println("Withdraw successful. New balance: " + account.getBalance());
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+
+    private void transferMoney(Customer customer) {
+        System.out.println("\n=== Transfer Money ===");
+        Account fromAccount = selectAccount(customer);
+        if (fromAccount == null) return;
+
+        System.out.println("Transfer to:");
+        System.out.println("1. My other account");
+        System.out.println("2. Another customer's account");
+        System.out.print("Choice: ");
+        int choice = readInt();
+
+        Account toAccount = null;
+
+        if (choice == 1) {
+            toAccount = selectOtherAccountOfSameCustomer(customer, fromAccount);
+        } else if (choice == 2) {
+            toAccount = selectAccountOfAnotherCustomer();
+        } else {
+            System.out.println("Invalid choice.");
+            return;
+        }
+
+        if (toAccount == null) return;
+
+        System.out.print("Enter amount to transfer: ");
+        double amount = readDouble();
+
+        try {
+            fromAccount.withdraw(amount);
+            toAccount.deposit(amount);
+
+            // placeholder for now – later we will record real Transaction objects
+            recordTransfer(fromAccount, toAccount, amount);
+
+            System.out.println("Transfer successful.");
+            System.out.println("From account new balance: " + fromAccount.getBalance());
+            System.out.println("To account new balance: " + toAccount.getBalance());
+
+        } catch (Exception e) {
+            System.out.println("Error during transfer: " + e.getMessage());
+        }
+    }
+
+    private Account selectOtherAccountOfSameCustomer(Customer customer, Account fromAccount) {
+        List<Account> accounts = customer.getAccounts();
+        List<Account> others = new ArrayList<>();
+
+        for (Account acc : accounts) {
+            if (!acc.getAccountNumber().equals(fromAccount.getAccountNumber())) {
+                others.add(acc);
+            }
+        }
+
+        if (others.isEmpty()) {
+            System.out.println("You have only one account. No other account to transfer to.");
+            return null;
+        }
+
+        System.out.println("\nSelect destination account:");
+        for (int i = 0; i < others.size(); i++) {
+            Account acc = others.get(i);
+            System.out.println((i + 1) + ". " + acc.getAccountType() +
+                    " #" + acc.getAccountNumber() +
+                    " | Balance: " + acc.getBalance());
+        }
+        System.out.print("Choice: ");
+        int choice = readInt();
+
+        if (choice < 1 || choice > others.size()) {
+            System.out.println("Invalid choice.");
+            return null;
+        }
+        return others.get(choice - 1);
+    }
+
+    private Account selectAccountOfAnotherCustomer() {
+        System.out.print("Enter other customer's ID: ");
+        String otherId = scanner.nextLine();
+
+        Customer otherCustomer = users.stream()
+                .filter(u -> u instanceof Customer && u.getId().equals(otherId))
+                .map(u -> (Customer) u)
+                .findFirst()
+                .orElse(null);
+
+        if (otherCustomer == null) {
+            System.out.println("Customer not found.");
+            return null;
+        }
+
+        return selectAccount(otherCustomer);
+    }
+
+    private void showTransactions(Customer customer) {
+        Account account = selectAccount(customer);
+        if (account == null) return;
+
+        List<Transaction> txs = account.getTransactions();
+
+        if (txs.isEmpty()) {
+            System.out.println("No transactions for this account.");
+            return;
+        }
+
+        System.out.println("\n=== Transactions for " + account.getAccountNumber() + " ===");
+        for (Transaction tx : txs) {
+            System.out.println(
+                    tx.getDateTime() + " | " +
+                            tx.getType() + " | " +
+                            "Amount: " + tx.getAmount() + " | " +
+                            "Post-balance: " + tx.getPostBalance() + " | " +
+                            tx.getDescription()
+            );
+        }
+    }
+
+
+
+    private void recordTransfer(Account fromAccount, Account toAccount, double amount) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        Transaction outTx = new Transaction(
+                generateTransactionId(),
+                fromAccount.getAccountNumber(),
+                toAccount.getAccountNumber(),
+                now,
+                TransactionType.Transfer_out,
+                amount,
+                fromAccount.getBalance(),
+                "Transfer to " + toAccount.getAccountNumber()
+        );
+
+        Transaction inTx = new Transaction(
+                generateTransactionId(),
+                fromAccount.getAccountNumber(),
+                toAccount.getAccountNumber(),
+                now,
+                TransactionType.Transfer_in,
+                amount,
+                toAccount.getBalance(),
+                "Transfer from " + fromAccount.getAccountNumber()
+        );
+
+        fromAccount.addTransaction(outTx);
+        toAccount.addTransaction(inTx);
+
+        // find owners of the accounts (customers) to save in the right file
+        Customer fromCustomer = findCustomerByAccount(fromAccount);
+        Customer toCustomer   = findCustomerByAccount(toAccount);
+
+        if (fromCustomer != null) {
+            TransactionFile.appendTransaction(fromCustomer, outTx);
+        }
+        if (toCustomer != null) {
+            TransactionFile.appendTransaction(toCustomer, inTx);
+        }
+    }
+
+
+
+    // ============= HELPER METHODS =============
+    private int readInt() {
+        while (true) {
+            try {
+                return Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.print("Please enter a number: ");
+            }
+        }
+    }
+
+    private double readDouble() {
+        while (true) {
+            try {
+                return Double.parseDouble(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.print("Please enter a valid amount: ");
+            }
+        }
+    }
+
+    private String generateAccountNumber() {
+        int random = (int) (Math.random() * 900_000) + 100_000; // 6-digit number
+        return "ACC" + random;
+    }
+    private String generateTransactionId() {
+        int random = (int) (Math.random() * 900_000) + 100_000;
+        return "TX" + random;
+    }
+
+    private Customer findCustomerByAccount(Account account) {
+        return users.stream()
+                .filter(u -> u instanceof Customer)
+                .map(u -> (Customer) u)
+                .filter(c -> c.getAccounts().contains(account))
+                .findFirst()
+                .orElse(null);
+    }
+
+
 }

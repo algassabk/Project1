@@ -1,4 +1,6 @@
 package com.acmebank.model;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Account {
 
@@ -9,7 +11,8 @@ public abstract class Account {
     protected int overdraftCount;
     protected CardType cardType;
 
-    protected Account(String accountNumber, AccountType accountType, double openingBalance, CardType cardType){
+    protected Account(String accountNumber, AccountType accountType,
+                      double openingBalance, CardType cardType) {
         this.accountNumber = accountNumber;
         this.accountType = accountType;
         this.balance = openingBalance;
@@ -36,13 +39,62 @@ public abstract class Account {
         return cardType;
     }
 
-    public abstract void deposit(double amount) throws Exception;
-    public abstract void withdraw(double amount) throws Exception;
+    public void deposit(double amount) throws Exception {
+        if (amount <= 0) {
+            throw new Exception("Deposit amount must be positive.");
+        }
+        balance += amount;
+    }
+
+    /**
+     * Withdraw with overdraft protection:
+     * - Charge $35 fee when going negative
+     * - Do not allow balance < -100
+     * - Deactivate after 2 overdrafts
+     */
+
+    public void withdraw(double amount) throws Exception {
+        if (!active) {
+            throw new Exception("Account is deactivated.");
+        }
+        if (amount <= 0) {
+            throw new Exception("Withdraw amount must be positive.");
+        }
+
+        double newBalance = balance - amount;
+
+        if (newBalance < 0) {
+            // apply overdraft fee
+            newBalance -= 35.0;
+            overdraftCount++;
+
+            if (newBalance < -100.0) {
+                // do not allow going below -100
+                throw new Exception("Cannot overdraw more than $100.");
+            }
+
+            if (overdraftCount >= 2) {
+                active = false;
+                System.out.println("Account has been deactivated due to repeated overdrafts.");
+            }
+        }
+
+        balance = newBalance;
+    }
 
     @Override
-    public String toString(){
-        return accountType + " #" + accountNumber + "(balance = " + balance + ")";
+    public String toString() {
+        return accountType + " #" + accountNumber + " (balance=" + balance + ")";
+    }
+
+    protected List<Transaction> transactions = new ArrayList<>();
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void addTransaction(Transaction tx) {
+        transactions.add(tx);
     }
 
 }
-
