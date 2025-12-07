@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 
 public class Menu {
 
@@ -13,6 +16,9 @@ public class Menu {
     public Menu(List<User> users) {
         this.users = users;
     }
+    private static final DateTimeFormatter TX_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
 
     public void showMainMenu(User user) {
         if (user instanceof Banker banker) {
@@ -90,6 +96,8 @@ public class Menu {
         }
 
         users.add(newCustomer);
+        UserFile.saveCustomer(newCustomer);
+
 
         System.out.println("\nCustomer created successfully!");
         System.out.println("Customer ID: " + newCustomer.getId() + ", Name: " + newCustomer.getName());
@@ -364,24 +372,79 @@ public class Menu {
         Account account = selectAccount(customer);
         if (account == null) return;
 
-        List<Transaction> txs = account.getTransactions();
-
-        if (txs.isEmpty()) {
+        List<Transaction> all = account.getTransactions();
+        if (all.isEmpty()) {
             System.out.println("No transactions for this account.");
             return;
         }
 
-        System.out.println("\n=== Transactions for " + account.getAccountNumber() + " ===");
-        for (Transaction tx : txs) {
-            System.out.println(
-                    tx.getDateTime() + " | " +
-                            tx.getType() + " | " +
-                            "Amount: " + tx.getAmount() + " | " +
-                            "Post-balance: " + tx.getPostBalance() + " | " +
-                            tx.getDescription()
-            );
+        while (true) {
+            System.out.println("\n=== Transactions for " + account.getAccountNumber() + " ===");
+            System.out.println("1. All");
+            System.out.println("2. Today");
+            System.out.println("3. Yesterday");
+            System.out.println("4. Last 7 days");
+            System.out.println("5. Last 30 days");
+            System.out.println("6. Back");
+            System.out.print("Choice: ");
+
+            int choice = readInt();
+            if (choice == 6) {
+                return;
+            }
+
+            LocalDate today = LocalDate.now();
+            List<Transaction> filtered = new ArrayList<>();
+
+            switch (choice) {
+                case 1 -> filtered = all;
+                case 2 -> {
+                    for (Transaction tx : all) {
+                        if (tx.getDateTime().toLocalDate().equals(today)) {
+                            filtered.add(tx);
+                        }
+                    }
+                }
+                case 3 -> {
+                    LocalDate yesterday = today.minusDays(1);
+                    for (Transaction tx : all) {
+                        if (tx.getDateTime().toLocalDate().equals(yesterday)) {
+                            filtered.add(tx);
+                        }
+                    }
+                }
+                case 4 -> {
+                    LocalDate from = today.minusDays(7);
+                    for (Transaction tx : all) {
+                        LocalDate d = tx.getDateTime().toLocalDate();
+                        if (!d.isBefore(from)) {   // d >= from
+                            filtered.add(tx);
+                        }
+                    }
+                }
+                case 5 -> {
+                    LocalDate from = today.minusDays(30);
+                    for (Transaction tx : all) {
+                        LocalDate d = tx.getDateTime().toLocalDate();
+                        if (!d.isBefore(from)) {
+                            filtered.add(tx);
+                        }
+                    }
+                }
+                default -> {
+                    System.out.println("Invalid choice.");
+                    continue;
+                }
+            }
+
+            if (filtered.isEmpty()) {
+                System.out.println("No transactions found for this period.");
+            } else {
+                printTransactions(filtered);
+            }
         }
     }
+
 
 
 
@@ -465,6 +528,21 @@ public class Menu {
                 .findFirst()
                 .orElse(null);
     }
+
+    private void printTransactions(List<Transaction> txs) {
+        System.out.println("\nDate & Time           | Type         | Amount   | Post-balance | Description");
+        System.out.println("--------------------------------------------------------------------------");
+        for (Transaction tx : txs) {
+            String dt = TX_FORMATTER.format(tx.getDateTime());
+            System.out.printf("%s | %-11s | %-8.2f | %-12.2f | %s%n",
+                    dt,
+                    tx.getType(),
+                    tx.getAmount(),
+                    tx.getPostBalance(),
+                    tx.getDescription());
+        }
+    }
+
 
 
 }

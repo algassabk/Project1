@@ -43,15 +43,16 @@ public abstract class Account {
         if (amount <= 0) {
             throw new Exception("Deposit amount must be positive.");
         }
-        balance += amount;
-    }
 
-    /**
-     * Withdraw with overdraft protection:
-     * - Charge $35 fee when going negative
-     * - Do not allow balance < -100
-     * - Deactivate after 2 overdrafts
-     */
+        balance += amount;
+
+        // 🔁 Reactivate account if overdraft is cleared
+        if (!active && balance >= 0 && overdraftCount >= 2) {
+            active = true;
+            overdraftCount = 0; // reset overdraft history
+            System.out.println("Account has been reactivated after clearing overdraft balance.");
+        }
+    }
 
     public void withdraw(double amount) throws Exception {
         if (!active) {

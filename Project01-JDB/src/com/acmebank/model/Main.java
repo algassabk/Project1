@@ -1,6 +1,6 @@
 package com.acmebank.model;
 
-import java.util.ArrayList;   //  added
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -9,23 +9,36 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // 1) Demo users in memory for now
-        String customerPwdHash = PasswordHelper.hash("1234");
-        String bankerPwdHash   = PasswordHelper.hash("1111");
+        // 1) Load users from files (if any)
+        List<User> users = UserFile.loadAllUsers();
 
-        Customer customer = new Customer("C001", "Khadija", customerPwdHash);
-        Banker banker     = new Banker("B001", "Ahmed", bankerPwdHash, "Main Branch");
+        // 2) If no users yet, create default banker + customer and save them
+        if (users.isEmpty()) {
+            System.out.println("No users found. Creating default banker and customer...");
 
-        // ✅ use modifiable list instead of List.of(...)
-        List<User> users = new ArrayList<>();
-        users.add(customer);
-        users.add(banker);
+            String customerPwdHash = PasswordHelper.hash("1234");
+            String bankerPwdHash   = PasswordHelper.hash("1111");
 
+            Customer customer = new Customer("C001", "Khadija", customerPwdHash);
+            Banker banker     = new Banker("B001", "Ahmed", bankerPwdHash, "Main Branch");
 
+            // add a demo account so customer menu works
+            CardType defaultCard = CardType.Mastercard;
+            Account demoAccount = new CheckingAccount("ACC100001", 500.0, defaultCard);
+            customer.addAccount(demoAccount);
+
+            users = new ArrayList<>();
+            users.add(customer);
+            users.add(banker);
+
+            // save to files
+            UserFile.saveCustomer(customer);
+            UserFile.saveBanker(banker);
+        }
 
         Login loginService = new Login(users);
 
-        // 2) Ask for login
+        // 3) Ask for login
         Scanner scanner = new Scanner(System.in);
         System.out.println("=== ACME Bank Login ===");
         System.out.print("Enter ID: ");
@@ -36,7 +49,7 @@ public class Main {
 
         Optional<User> loggedIn = loginService.login(id, pwd);
 
-        // 3) Check result
+        // 4) Check result
         if (loggedIn.isEmpty()) {
             System.out.println("Login failed. Program will exit.");
             return;
@@ -45,9 +58,8 @@ public class Main {
         User user = loggedIn.get();
         System.out.println("Welcome " + user.getName() + " (" + user.getRole() + ")");
 
-        // 4) Open menu for this user
-        // ✅ pass the users list into Menu, so it can add new customers
+        // 5) Open menu
         Menu menu = new Menu(users);
-        menu.showMainMenu(user);   // This method will decide banker vs customer
+        menu.showMainMenu(user);
     }
 }

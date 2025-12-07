@@ -1,0 +1,4 @@
+id=C001
+name=Khadija
+role=CUSTOMER
+passwordHash=A6xnQhbz4Vx2HuGl4lXwZ5U2I8iziLRFnhP5eNfIRvQ=

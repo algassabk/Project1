@@ -1,0 +1,5 @@
+id=B001
+name=Ahmed
+role=BANKER
+passwordHash=D/4avRoIIVNTwjPW4AlhPpXuxCU4Mqdhryj/N6xaFQw=
+branch=Main Branch
