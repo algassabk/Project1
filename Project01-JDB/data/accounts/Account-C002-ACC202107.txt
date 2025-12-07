@@ -1,0 +1,7 @@
+customerId=C002
+accountNumber=ACC202107
+accountType=Savings
+balance=50.0
+status=ACTIVE
+cardType=MastercardPlatinum
+overdraftCount=0

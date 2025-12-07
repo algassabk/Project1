@@ -1,0 +1,4 @@
+id=C002
+name=Sara
+role=CUSTOMER
+passwordHash=7e4p+IJUO5VmILJtDuDn6VA5mxxCIvXeBeBkJbTJlek=

@@ -6,11 +6,11 @@ import java.util.Optional;
 import java.util.Scanner;
 
 public class Main {
-
     public static void main(String[] args) {
 
         // 1) Load users from files (if any)
-        List<User> users = UserFile.loadAllUsers();
+        List<User> users = UserFile.loadAllUsers();   // only ONCE
+        AccountFile.loadAccounts(users);
 
         // 2) If no users yet, create default banker + customer and save them
         if (users.isEmpty()) {
@@ -27,18 +27,16 @@ public class Main {
             Account demoAccount = new CheckingAccount("ACC100001", 500.0, defaultCard);
             customer.addAccount(demoAccount);
 
-            users = new ArrayList<>();
             users.add(customer);
             users.add(banker);
 
-            // save to files
             UserFile.saveCustomer(customer);
             UserFile.saveBanker(banker);
+            AccountFile.saveAccountsForCustomer(customer);
         }
 
         Login loginService = new Login(users);
 
-        // 3) Ask for login
         Scanner scanner = new Scanner(System.in);
         System.out.println("=== ACME Bank Login ===");
         System.out.print("Enter ID: ");
@@ -49,7 +47,6 @@ public class Main {
 
         Optional<User> loggedIn = loginService.login(id, pwd);
 
-        // 4) Check result
         if (loggedIn.isEmpty()) {
             System.out.println("Login failed. Program will exit.");
             return;
@@ -58,8 +55,8 @@ public class Main {
         User user = loggedIn.get();
         System.out.println("Welcome " + user.getName() + " (" + user.getRole() + ")");
 
-        // 5) Open menu
         Menu menu = new Menu(users);
         menu.showMainMenu(user);
     }
+
 }

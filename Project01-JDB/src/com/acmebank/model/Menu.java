@@ -97,6 +97,7 @@ public class Menu {
 
         users.add(newCustomer);
         UserFile.saveCustomer(newCustomer);
+        AccountFile.saveAccountsForCustomer(newCustomer);
 
 
         System.out.println("\nCustomer created successfully!");
@@ -154,7 +155,8 @@ public class Menu {
             System.out.println("3. Withdraw");
             System.out.println("4. Transfer");
             System.out.println("5. View transactions");
-            System.out.println("6. Logout");
+            System.out.println("6. Account statement");
+            System.out.println("7. Logout");
             System.out.print("Choice: ");
 
             int choice = readInt();
@@ -165,13 +167,30 @@ public class Menu {
                 case 3 -> withdrawFromAccount(customer);
                 case 4 -> transferMoney(customer);
                 case 5 -> showTransactions(customer);
-                case 6 -> {
+                case 6 -> showAccountStatement(customer);   //  new
+                case 7 -> {
                     System.out.println("Logging out...");
                     return;
                 }
                 default -> System.out.println("Invalid choice");
             }
         }
+    }
+
+    private void showAccountStatement(Customer customer){
+        Account account = selectAccount(customer);
+        if (account == null) return;
+
+        List<Transaction> txs = TransactionFile.loadForAccount(account.getAccountNumber());
+        System.out.println("\n=== ACCOUNT STATEMENT ===");
+        System.out.println("Account: " + account.getAccountType() + " #" + account.getAccountNumber());
+        System.out.printf("Current balance: %.2f%n" , account.getBalance());
+        if (txs.isEmpty()) {
+            System.out.println("No transactions for this account yet.");
+            return;
+        }
+        // reuse the same printer used in showTransactions
+        printTransactions(txs);
     }
 
     // ===== CUSTOMER ACTIONS =====
@@ -226,7 +245,7 @@ public class Menu {
             // create transaction
             Transaction tx = new Transaction(
                     generateTransactionId(),
-                    null,                                   // fromAccount (null for deposit)
+                    null,           // fromAccount (null for deposit)
                     account.getAccountNumber(),             // toAccount
                     LocalDateTime.now(),
                     TransactionType.Deposit,
@@ -235,7 +254,12 @@ public class Menu {
                     "Deposit"
             );
             account.addTransaction(tx);
-            TransactionFile.appendTransaction(customer, tx);
+            TransactionFile.append(account.getAccountNumber(), tx);
+
+            Customer owner = findCustomerByAccount(account);
+            if (owner != null) {
+                AccountFile.saveAccountsForCustomer(owner);
+            }
 
 
             System.out.println("Deposit successful. New balance: " + account.getBalance());
@@ -266,7 +290,12 @@ public class Menu {
                     "Withdraw"
             );
             account.addTransaction(tx);
-            TransactionFile.appendTransaction(customer, tx);
+            TransactionFile.append(account.getAccountNumber(), tx);
+            Customer owner = findCustomerByAccount(account);
+            if (owner != null) {
+                AccountFile.saveAccountsForCustomer(owner);
+            }
+
 
             System.out.println("Withdraw successful. New balance: " + account.getBalance());
         } catch (Exception e) {
@@ -303,8 +332,16 @@ public class Menu {
         double amount = readDouble();
 
         try {
+            // if transfer is to own account
+            boolean isOwnAccount = customer.getAccounts().contains(toAccount);
+            // check daily limits
+            fromAccount.checkTransferLimit(amount, isOwnAccount);
+
             fromAccount.withdraw(amount);
             toAccount.deposit(amount);
+
+            fromAccount.recordTransferAmount(amount, isOwnAccount);
+
 
             // placeholder for now – later we will record real Transaction objects
             recordTransfer(fromAccount, toAccount, amount);
@@ -372,7 +409,7 @@ public class Menu {
         Account account = selectAccount(customer);
         if (account == null) return;
 
-        List<Transaction> all = account.getTransactions();
+        List<Transaction> all = TransactionFile.loadForAccount(account.getAccountNumber());
         if (all.isEmpty()) {
             System.out.println("No transactions for this account.");
             return;
@@ -481,11 +518,21 @@ public class Menu {
         Customer toCustomer   = findCustomerByAccount(toAccount);
 
         if (fromCustomer != null) {
-            TransactionFile.appendTransaction(fromCustomer, outTx);
+            TransactionFile.append(fromAccount.getAccountNumber(), outTx);
         }
         if (toCustomer != null) {
-            TransactionFile.appendTransaction(toCustomer, inTx);
+            TransactionFile.append(toAccount.getAccountNumber(), inTx);
         }
+        Customer fromCustomerAcc = findCustomerByAccount(fromAccount);
+        Customer toCustomerAcc   = findCustomerByAccount(toAccount);
+
+        if (fromCustomer != null) {
+            AccountFile.saveAccountsForCustomer(fromCustomer);
+        }
+        if (toCustomer != null && toCustomer != fromCustomer) {
+            AccountFile.saveAccountsForCustomer(toCustomer);
+        }
+
     }
 
 

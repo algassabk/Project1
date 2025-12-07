@@ -9,9 +9,9 @@ public abstract class User {
     protected Role role;
     protected String encryptedPassword;
 
-    // for fraud detection
-    protected int failedLoginAttempts;
-    protected LocalDateTime lockedUntil;
+    // 🔒 for fraud detection
+    protected int failedAttempts;
+    protected LocalDateTime lockUntil;
 
     protected User(String id, String name, Role role, String encryptedPassword) {
         this.id = id;
@@ -36,25 +36,20 @@ public abstract class User {
         return encryptedPassword;
     }
 
-    // ====== these 3 methods are the important ones ======
-
-    public boolean isLocked() {
-        return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
+    // ====== fraud-detection support ======
+    public int getFailedAttempts() {
+        return failedAttempts;
     }
 
-    public void registerFailedAttempt() {
-        failedLoginAttempts++;
-        if (failedLoginAttempts >= 3) {
-            lockedUntil = LocalDateTime.now().plusMinutes(1);
-        }
+    public void setFailedAttempts(int failedAttempts) {
+        this.failedAttempts = failedAttempts;
     }
 
-    public void resetFailedAttempts() {
-        failedLoginAttempts = 0;
-        lockedUntil = null;
+    public LocalDateTime getLockUntil() {       // ✅ use this name
+        return lockUntil;
     }
 
-    public LocalDateTime getLockedUntil() {
-        return lockedUntil;
+    public void setLockUntil(LocalDateTime lockUntil) {
+        this.lockUntil = lockUntil;
     }
 }

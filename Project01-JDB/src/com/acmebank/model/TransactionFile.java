@@ -3,64 +3,64 @@ package com.acmebank.model;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.*;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionFile {
 
-    // Folder: data/transactions/
-    private static final Path BASE_DIR = Paths.get("data", "Transactions");
-    private static final DateTimeFormatter FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final Path TX_DIR = Paths.get("Transactions");
 
-    private static Path getFileForCustomer(Customer customer) {
-        String fileName = "Transactions-" + customer.getId() + ".txt";
-        return BASE_DIR.resolve(fileName);
-    }
-
-    public static void appendTransaction(Customer customer, Transaction tx) {
-        try {
-            if (!Files.exists(BASE_DIR)) {
-                Files.createDirectories(BASE_DIR);
-            }
-
-            Path file = getFileForCustomer(customer);
-
-            try (BufferedWriter writer = Files.newBufferedWriter(
-                    file, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
-
-                // simple pipe-separated line
-                String line = String.join("|",
-                        tx.getTransactionId(),
-                        tx.getDateTime().format(FORMATTER),
-                        tx.getFromAccount() == null ? "" : tx.getFromAccount(),
-                        tx.getToAccount() == null ? "" : tx.getToAccount(),
-                        tx.getType().name(),
-                        String.valueOf(tx.getAmount()),
-                        String.valueOf(tx.getPostBalance()),
-                        tx.getDescription()
-                );
-                writer.write(line);
-                writer.newLine();
-            }
-
-        } catch (IOException e) {
-            System.out.println("Could not write transaction file: " + e.getMessage());
+    private static void ensureDir() throws IOException {
+        if (!Files.exists(TX_DIR)) {
+            Files.createDirectories(TX_DIR);
         }
     }
 
-    // Optional: read all lines (for advanced filtering later)
-    public static List<String> readRawLines(Customer customer) {
-        Path file = getFileForCustomer(customer);
+    private static Path fileForAccount(String accountNumber) {
+        // e.g. Transactions/Account-ACC100001.txt
+        String fileName = "Account-" + accountNumber + ".txt";
+        return TX_DIR.resolve(fileName);
+    }
+
+    // ---------- SAVE ONE TRANSACTION ----------
+    public static void append(String accountNumber, Transaction tx) {
+        try {
+            ensureDir();
+            Path file = fileForAccount(accountNumber);
+            try (BufferedWriter w = Files.newBufferedWriter(
+                    file,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND)) {
+
+                w.write(tx.toFileLine());
+                w.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving transaction: " + e.getMessage());
+        }
+    }
+
+    // ---------- LOAD ALL TRANSACTIONS FOR AN ACCOUNT ----------
+    public static List<Transaction> loadForAccount(String accountNumber) {
+        List<Transaction> result = new ArrayList<>();
+        Path file = fileForAccount(accountNumber);
+
         if (!Files.exists(file)) {
-            return new ArrayList<>();
+            return result;
         }
+
         try {
-            return Files.readAllLines(file);
+            List<String> lines = Files.readAllLines(file);
+            for (String line : lines) {
+                Transaction tx = Transaction.fromFileLine(line);
+                if (tx != null) {
+                    result.add(tx);
+                }
+            }
         } catch (IOException e) {
-            System.out.println("Could not read transaction file: " + e.getMessage());
-            return new ArrayList<>();
+            System.out.println("Error loading transactions: " + e.getMessage());
         }
+
+        return result;
     }
 }

@@ -21,6 +21,7 @@ public class Transaction {
                        double amount,
                        double postBalance,
                        String description) {
+
         this.transactionId = transactionId;
         this.fromAccount = fromAccount;
         this.toAccount = toAccount;
@@ -31,35 +32,40 @@ public class Transaction {
         this.description = description;
     }
 
-    public String getTransactionId() {
-        return transactionId;
+    public String getTransactionId() { return transactionId; }
+    public String getFromAccount() { return fromAccount; }
+    public String getToAccount() { return toAccount; }
+    public LocalDateTime getDateTime() { return dateTime; }
+    public TransactionType getType() { return type; }
+    public double getAmount() { return amount; }
+    public double getPostBalance() { return postBalance; }
+    public String getDescription() { return description; }
+
+    // ---------- FILE SAVE FORMAT ----------
+    public String toFileLine() {
+        return transactionId + "|" +
+                (fromAccount == null ? "" : fromAccount) + "|" +
+                (toAccount == null ? "" : toAccount) + "|" +
+                dateTime.toString() + "|" +
+                type.name() + "|" +
+                amount + "|" +
+                postBalance + "|" +
+                description.replace("|", "/");
     }
 
-    public String getFromAccount() {
-        return fromAccount;
-    }
+    public static Transaction fromFileLine(String line) {
+        String[] parts = line.split("\\|", 8);
+        if (parts.length < 8) return null;
 
-    public String getToAccount() {
-        return toAccount;
-    }
+        String id = parts[0];
+        String from = parts[1].isEmpty() ? null : parts[1];
+        String to = parts[2].isEmpty() ? null : parts[2];
+        LocalDateTime dt = LocalDateTime.parse(parts[3]);
+        TransactionType type = TransactionType.valueOf(parts[4]);
+        double amount = Double.parseDouble(parts[5]);
+        double postBal = Double.parseDouble(parts[6]);
+        String desc = parts[7];
 
-    public LocalDateTime getDateTime() {
-        return dateTime;
-    }
-
-    public TransactionType getType() {
-        return type;
-    }
-
-    public double getAmount() {
-        return amount;
-    }
-
-    public double getPostBalance() {
-        return postBalance;
-    }
-
-    public String getDescription() {
-        return description;
+        return new Transaction(id, from, to, dt, type, amount, postBal, desc);
     }
 }

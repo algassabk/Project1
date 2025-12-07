@@ -1,66 +1,75 @@
 package com.acmebank.model;
 
-public enum CardType implements Card {
+public enum CardType {
 
     MastercardPlatinum(
-            20_000, 40_000, 80_000,
-            100_000, 200_000),
+            "Mastercard Platinum",
+            20000,   // withdrawLimitPerDay
+            40000,   // transferLimitOtherPerDay
+            80000,   // transferLimitOwnPerDay
+            100000,  // depositLimitPerDay
+            200000   // depositLimitOwnPerDay
+    ),
     MastercardTitanium(
-            10_000, 20_000, 40_000,
-            100_000, 200_000),
+            "Mastercard Titanium",
+            10000,
+            20000,
+            40000,
+            100000,
+            200000
+    ),
     Mastercard(
-            5_000, 10_000, 20_000,
-            100_000, 200_000);
+            "Mastercard",
+            5000,
+            10000,
+            20000,
+            100000,
+            200000
+    );
 
+    private final String displayName;
     private final double withdrawLimitPerDay;
-    private final double transferLimitPerDay;
+    private final double transferLimitOtherPerDay;
     private final double transferLimitOwnPerDay;
     private final double depositLimitPerDay;
     private final double depositLimitOwnPerDay;
 
-    CardType(double withdrawLimitPerDay,
-             double transferLimitPerDay,
+    CardType(String displayName,
+             double withdrawLimitPerDay,
+             double transferLimitOtherPerDay,
              double transferLimitOwnPerDay,
              double depositLimitPerDay,
              double depositLimitOwnPerDay) {
+        this.displayName = displayName;
         this.withdrawLimitPerDay = withdrawLimitPerDay;
-        this.transferLimitPerDay = transferLimitPerDay;
+        this.transferLimitOtherPerDay = transferLimitOtherPerDay;
         this.transferLimitOwnPerDay = transferLimitOwnPerDay;
         this.depositLimitPerDay = depositLimitPerDay;
         this.depositLimitOwnPerDay = depositLimitOwnPerDay;
     }
 
-    @Override
-    public double getDailyWithdrawLimit() {
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public double getWithdrawLimitPerDay() {
         return withdrawLimitPerDay;
     }
 
-    @Override
-    public double getDailyTransferLimitToOthers() {
-        return transferLimitPerDay;
+    public double getTransferLimitOtherPerDay() {
+        return transferLimitOtherPerDay;
     }
 
-    @Override
-    public double getDailyTransferLimitOwn() {
+    public double getTransferLimitOwnPerDay() {
         return transferLimitOwnPerDay;
     }
 
-    @Override
-    public double getDailyDepositLimit() {
+    public double getDepositLimitPerDay() {
         return depositLimitPerDay;
     }
 
-    @Override
-    public double getDailyDepositLimitOwn() {
+    public double getDepositLimitOwnPerDay() {
         return depositLimitOwnPerDay;
     }
-
-    @Override
-    public String getDisplayName() {
-        return switch (this) {
-            case MastercardPlatinum -> "Mastercard Platinum";
-            case MastercardTitanium -> "Mastercard Titanium";
-            case Mastercard -> "Mastercard";
-        };
-    }
 }
+

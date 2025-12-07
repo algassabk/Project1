@@ -1,41 +1,66 @@
 package com.acmebank.model;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 public class Login {
+
     private final List<User> users;
 
     public Login(List<User> users) {
         this.users = users;
     }
 
-    // try to login; returns User if success, empty if fail
     public Optional<User> login(String id, String password) {
+
+        // 1) Find user by ID
         Optional<User> userOpt = users.stream()
                 .filter(u -> u.getId().equals(id))
                 .findFirst();
 
-        return userOpt.flatMap(user -> {
-            // 1) check if locked
-            if (user.isLocked()) {
-                System.out.println("Account is locked until: " + user.getLockedUntil());
-                return Optional.empty();
-            }
+        if (userOpt.isEmpty()) {
+            System.out.println("User not found.");
+            return Optional.empty();
+        }
 
-            // 2) check password
-            if (PasswordHelper.check(password, user.getEncryptedPassword())) {
-                user.resetFailedAttempts();
-                System.out.println("Login successful.");
-                return Optional.of(user);
+        User user = userOpt.get();
+
+        // 2) Check if account is locked
+        if (user.getLockUntil() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(user.getLockUntil())) {
+                System.out.println("Account is locked. Please try again after: " + user.getLockUntil());
+                return Optional.empty();
             } else {
-                System.out.println("Wrong password.");
-                user.registerFailedAttempt();
-
-                if (user.isLocked()) {
-                    System.out.println("Too many attempts. Account locked for 1 minute.");
-                }
-                return Optional.empty();
+                // lock period passed → reset lock info
+                user.setLockUntil(null);
+                user.setFailedAttempts(0);
             }
-        });
+        }
+
+        // 3) Check password
+        boolean passwordMatches =
+                PasswordHelper.hash(password).equals(user.getEncryptedPassword());
+
+        if (!passwordMatches) {
+            int attempts = user.getFailedAttempts() + 1;
+            user.setFailedAttempts(attempts);
+
+            System.out.println("Wrong password. Failed attempts: " + attempts + "/3");
+
+            if (attempts >= 3) {
+                LocalDateTime lockTime = LocalDateTime.now().plusMinutes(1);
+                user.setLockUntil(lockTime);
+                System.out.println("Too many failed attempts. Account locked until: " + lockTime);
+            }
+            return Optional.empty();
+        }
+
+        // 4) Success → reset counters
+        user.setFailedAttempts(0);
+        user.setLockUntil(null);
+
+        return Optional.of(user);
     }
 }
