@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 
+
 public class Menu {
 
     private final Scanner scanner = new Scanner(System.in);
@@ -409,7 +410,9 @@ public class Menu {
         Account account = selectAccount(customer);
         if (account == null) return;
 
+        // load from file so history survives restart
         List<Transaction> all = TransactionFile.loadForAccount(account.getAccountNumber());
+
         if (all.isEmpty()) {
             System.out.println("No transactions for this account.");
             return;
@@ -422,11 +425,12 @@ public class Menu {
             System.out.println("3. Yesterday");
             System.out.println("4. Last 7 days");
             System.out.println("5. Last 30 days");
-            System.out.println("6. Back");
+            System.out.println("6. Last month (calendar)");
+            System.out.println("7. Back");
             System.out.print("Choice: ");
 
             int choice = readInt();
-            if (choice == 6) {
+            if (choice == 7) {
                 return;
             }
 
@@ -454,7 +458,7 @@ public class Menu {
                     LocalDate from = today.minusDays(7);
                     for (Transaction tx : all) {
                         LocalDate d = tx.getDateTime().toLocalDate();
-                        if (!d.isBefore(from)) {   // d >= from
+                        if (!d.isBefore(from)) { // d >= from
                             filtered.add(tx);
                         }
                     }
@@ -464,6 +468,19 @@ public class Menu {
                     for (Transaction tx : all) {
                         LocalDate d = tx.getDateTime().toLocalDate();
                         if (!d.isBefore(from)) {
+                            filtered.add(tx);
+                        }
+                    }
+                }
+                case 6 -> {
+                    // last calendar month
+                    LocalDate firstOfThisMonth = today.withDayOfMonth(1);
+                    LocalDate firstOfLastMonth = firstOfThisMonth.minusMonths(1);
+                    LocalDate lastOfLastMonth = firstOfThisMonth.minusDays(1);
+
+                    for (Transaction tx : all) {
+                        LocalDate d = tx.getDateTime().toLocalDate();
+                        if (!d.isBefore(firstOfLastMonth) && !d.isAfter(lastOfLastMonth)) {
                             filtered.add(tx);
                         }
                     }

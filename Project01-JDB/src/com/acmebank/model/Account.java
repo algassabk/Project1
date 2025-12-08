@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Account {
+public abstract class Account implements StatementPrintable {
 
     protected String accountNumber;
     protected AccountType accountType;
@@ -169,4 +169,29 @@ public abstract class Account {
     public String toString() {
         return accountType + " #" + accountNumber + " (balance=" + balance + ")";
     }
+    @Override
+    public void printStatement() {
+        System.out.println("\n=== ACCOUNT STATEMENT (from Account.printStatement) ===");
+        System.out.println("Account: " + accountType + " #" + accountNumber);
+        System.out.printf("Current balance: %.2f%n", balance);
+
+        // load all transactions from file
+        var txs = TransactionFile.loadForAccount(accountNumber);
+        if (txs.isEmpty()) {
+            System.out.println("No transactions for this account yet.");
+            return;
+        }
+
+        System.out.println("Date & Time           | Type         | Amount   | Post-balance | Description");
+        System.out.println("--------------------------------------------------------------------------");
+        for (Transaction tx : txs) {
+            System.out.printf("%s | %-11s | %-8.2f | %-12.2f | %s%n",
+                    tx.getDateTime(),
+                    tx.getType(),
+                    tx.getAmount(),
+                    tx.getPostBalance(),
+                    tx.getDescription());
+        }
+    }
+
 }
