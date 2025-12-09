@@ -177,22 +177,41 @@ public class Menu {
             }
         }
     }
-
-    private void showAccountStatement(Customer customer){
+    private void showAccountStatement(Customer customer) {
         Account account = selectAccount(customer);
         if (account == null) return;
 
-        List<Transaction> txs = TransactionFile.loadForAccount(account.getAccountNumber());
+        // Load ALL transactions for this customer
+        List<Transaction> all = TransactionFile.loadForCustomer(customer.getId());
+
+        // Filter only transactions belonging to THIS account
+        List<Transaction> txs = new ArrayList<>();
+        String accNo = account.getAccountNumber();
+
+        for (Transaction tx : all) {
+            String from = tx.getFromAccountNumber();
+            String to   = tx.getToAccountNumber();
+
+            if ((from != null && from.equals(accNo)) ||
+                    (to != null && to.equals(accNo))) {
+                txs.add(tx);
+            }
+        }
+
         System.out.println("\n=== ACCOUNT STATEMENT ===");
         System.out.println("Account: " + account.getAccountType() + " #" + account.getAccountNumber());
-        System.out.printf("Current balance: %.2f%n" , account.getBalance());
+        System.out.printf("Current balance: %.2f%n", account.getBalance());
+
         if (txs.isEmpty()) {
             System.out.println("No transactions for this account yet.");
             return;
         }
-        // reuse the same printer used in showTransactions
+
+        // reuse the common printer
         printTransactions(txs);
     }
+
+
 
     //CUSTOMER ACTIONS
 
@@ -243,11 +262,10 @@ public class Menu {
         try {
             account.deposit(amount);
 
-            // create transaction
             Transaction tx = new Transaction(
                     generateTransactionId(),
-                    null,           // fromAccount (null for deposit)
-                    account.getAccountNumber(),             // toAccount
+                    null,
+                    account.getAccountNumber(),
                     LocalDateTime.now(),
                     TransactionType.Deposit,
                     amount,
@@ -255,13 +273,12 @@ public class Menu {
                     "Deposit"
             );
             account.addTransaction(tx);
-            TransactionFile.append(account.getAccountNumber(), tx);
 
-            Customer owner = findCustomerByAccount(account);
-            if (owner != null) {
-                AccountFile.saveAccountsForCustomer(owner);
-            }
+            // save to customer's transaction file
+            TransactionFile.append(customer.getId(), tx);
 
+            // save account state
+            AccountFile.saveAccountsForCustomer(customer);
 
             System.out.println("Deposit successful. New balance: " + account.getBalance());
         } catch (Exception e) {
@@ -282,8 +299,8 @@ public class Menu {
 
             Transaction tx = new Transaction(
                     generateTransactionId(),
-                    account.getAccountNumber(),             // fromAccount
-                    null,                                   // toAccount
+                    account.getAccountNumber(),
+                    null,
                     LocalDateTime.now(),
                     TransactionType.Withdraw,
                     amount,
@@ -291,12 +308,9 @@ public class Menu {
                     "Withdraw"
             );
             account.addTransaction(tx);
-            TransactionFile.append(account.getAccountNumber(), tx);
-            Customer owner = findCustomerByAccount(account);
-            if (owner != null) {
-                AccountFile.saveAccountsForCustomer(owner);
-            }
 
+            TransactionFile.append(customer.getId(), tx);
+            AccountFile.saveAccountsForCustomer(customer);
 
             System.out.println("Withdraw successful. New balance: " + account.getBalance());
         } catch (Exception e) {
@@ -348,8 +362,7 @@ public class Menu {
             recordTransfer(fromAccount, toAccount, amount);
 
             System.out.println("Transfer successful.");
-            System.out.println("From account new balance: " + fromAccount.getBalance());
-            System.out.println("To account new balance: " + toAccount.getBalance());
+            System.out.println("New balance: " + toAccount.getBalance());
 
         } catch (Exception e) {
             System.out.println("Error during transfer: " + e.getMessage());
@@ -403,17 +416,57 @@ public class Menu {
             return null;
         }
 
-        return selectAccount(otherCustomer);
+        return selectAccountWithoutBalance(otherCustomer);
     }
+
+    // Use this when selecting an account that belongs to ANOTHER customer (privacy: no balance)
+    private Account selectAccountWithoutBalance(Customer customer) {
+        List<Account> accounts = customer.getAccounts();
+        if (accounts.isEmpty()) {
+            System.out.println("This customer has no accounts.");
+            return null;
+        }
+        if (accounts.size() == 1) {
+            return accounts.get(0);
+        }
+
+        System.out.println("\nSelect account:");
+        for (int i = 0; i < accounts.size(); i++) {
+            Account acc = accounts.get(i);
+            System.out.println((i + 1) + ". " + acc.getAccountType() +
+                    " #" + acc.getAccountNumber());   // 👈 no balance printed here
+        }
+        System.out.print("Choice: ");
+        int choice = readInt();
+
+        if (choice < 1 || choice > accounts.size()) {
+            System.out.println("Invalid choice.");
+            return null;
+        }
+        return accounts.get(choice - 1);
+    }
+
 
     private void showTransactions(Customer customer) {
         Account account = selectAccount(customer);
         if (account == null) return;
 
-        // load from file so history makes it to restart
-        List<Transaction> all = TransactionFile.loadForAccount(account.getAccountNumber());
+        // Load all transactions for this customer
+        List<Transaction> all = TransactionFile.loadForCustomer(customer.getId());
+        String accNo = account.getAccountNumber();
 
-        if (all.isEmpty()) {
+        // Filter only this account’s transactions
+        List<Transaction> accountTx = new ArrayList<>();
+        for (Transaction tx : all) {
+            String from = tx.getFromAccountNumber();
+            String to   = tx.getToAccountNumber();
+
+            if (accNo.equals(from) || accNo.equals(to)) {
+                accountTx.add(tx);
+            }
+        }
+
+        if (accountTx.isEmpty()) {
             System.out.println("No transactions for this account.");
             return;
         }
@@ -430,61 +483,64 @@ public class Menu {
             System.out.print("Choice: ");
 
             int choice = readInt();
-            if (choice == 7) {
-                return;
-            }
+            if (choice == 7) return;
 
             LocalDate today = LocalDate.now();
             List<Transaction> filtered = new ArrayList<>();
 
             switch (choice) {
-                case 1 -> filtered = all;
+                case 1 -> filtered = accountTx;
+
                 case 2 -> {
-                    for (Transaction tx : all) {
+                    for (Transaction tx : accountTx) {
                         if (tx.getDateTime().toLocalDate().equals(today)) {
                             filtered.add(tx);
                         }
                     }
                 }
+
                 case 3 -> {
                     LocalDate yesterday = today.minusDays(1);
-                    for (Transaction tx : all) {
+                    for (Transaction tx : accountTx) {
                         if (tx.getDateTime().toLocalDate().equals(yesterday)) {
                             filtered.add(tx);
                         }
                     }
                 }
+
                 case 4 -> {
                     LocalDate from = today.minusDays(7);
-                    for (Transaction tx : all) {
-                        LocalDate d = tx.getDateTime().toLocalDate();
-                        if (!d.isBefore(from)) { // d >= from
-                            filtered.add(tx);
-                        }
-                    }
-                }
-                case 5 -> {
-                    LocalDate from = today.minusDays(30);
-                    for (Transaction tx : all) {
+                    for (Transaction tx : accountTx) {
                         LocalDate d = tx.getDateTime().toLocalDate();
                         if (!d.isBefore(from)) {
                             filtered.add(tx);
                         }
                     }
                 }
+
+                case 5 -> {
+                    LocalDate from = today.minusDays(30);
+                    for (Transaction tx : accountTx) {
+                        LocalDate d = tx.getDateTime().toLocalDate();
+                        if (!d.isBefore(from)) {
+                            filtered.add(tx);
+                        }
+                    }
+                }
+
                 case 6 -> {
-                    // last calendar month
                     LocalDate firstOfThisMonth = today.withDayOfMonth(1);
                     LocalDate firstOfLastMonth = firstOfThisMonth.minusMonths(1);
                     LocalDate lastOfLastMonth = firstOfThisMonth.minusDays(1);
 
-                    for (Transaction tx : all) {
+                    for (Transaction tx : accountTx) {
                         LocalDate d = tx.getDateTime().toLocalDate();
                         if (!d.isBefore(firstOfLastMonth) && !d.isAfter(lastOfLastMonth)) {
                             filtered.add(tx);
                         }
                     }
                 }
+
                 default -> {
                     System.out.println("Invalid choice.");
                     continue;
@@ -502,8 +558,9 @@ public class Menu {
 
 
 
+
     private void recordTransfer(Account fromAccount, Account toAccount, double amount) {
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
         Transaction outTx = new Transaction(
                 generateTransactionId(),
@@ -530,27 +587,19 @@ public class Menu {
         fromAccount.addTransaction(outTx);
         toAccount.addTransaction(inTx);
 
-        // find owners of the accounts (customers) to save in the right file
         Customer fromCustomer = findCustomerByAccount(fromAccount);
         Customer toCustomer   = findCustomerByAccount(toAccount);
 
         if (fromCustomer != null) {
-            TransactionFile.append(fromAccount.getAccountNumber(), outTx);
-        }
-        if (toCustomer != null) {
-            TransactionFile.append(toAccount.getAccountNumber(), inTx);
-        }
-        Customer fromCustomerAcc = findCustomerByAccount(fromAccount);
-        Customer toCustomerAcc   = findCustomerByAccount(toAccount);
-
-        if (fromCustomer != null) {
+            TransactionFile.append(fromCustomer.getId(), outTx);
             AccountFile.saveAccountsForCustomer(fromCustomer);
         }
         if (toCustomer != null && toCustomer != fromCustomer) {
+            TransactionFile.append(toCustomer.getId(), inTx);
             AccountFile.saveAccountsForCustomer(toCustomer);
         }
-
     }
+
 
 
 

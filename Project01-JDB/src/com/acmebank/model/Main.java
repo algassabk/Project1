@@ -1,6 +1,5 @@
 package com.acmebank.model;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -8,11 +7,11 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
 
-        // Load users from files
-        List<User> users = UserFile.loadAllUsers();   // only ONCE
+        //Load users + accounts from files (once at startup)
+        List<User> users = UserFile.loadAllUsers();
         AccountFile.loadAccounts(users);
 
-        //if no users yet, create default banker + customer and save them
+        // If no users yet, create default banker + customer and save them
         if (users.isEmpty()) {
             System.out.println("No users found. Creating default banker and customer...");
 
@@ -34,28 +33,37 @@ public class Main {
             AccountFile.saveAccountsForCustomer(customer);
         }
 
+        // Create login service + scanner
         Login loginService = new Login(users);
-
         Scanner scanner = new Scanner(System.in);
-        System.out.println("   ACME Bank Login   ");
-        System.out.print("Enter ID: ");
-        String id = scanner.nextLine();
 
-        System.out.print("Enter Password: ");
-        String pwd = scanner.nextLine();
+        // Login loop (fraud detection is inside Login.login)
+        User loggedInUser = null;
+        while (loggedInUser == null) {
 
-        Optional<User> loggedIn = loginService.login(id, pwd);
+            System.out.println("\n=== ACME Bank Login ===");
+            System.out.print("Enter ID: ");
+            String id = scanner.nextLine().trim();
 
-        if (loggedIn.isEmpty()) {
-            System.out.println("Login failed. Program will exit.");
-            return;
+
+            System.out.print("Enter Password: ");
+            String pwd = scanner.nextLine();
+
+            Optional<User> result = loginService.login(id, pwd);
+
+            if (result.isPresent()) {
+                loggedInUser = result.get();
+            } else {
+                // Login.login() already prints reason (wrong password, locked, etc.)
+                System.out.println("Login failed. Try again.\n");
+            }
         }
 
-        User user = loggedIn.get();
-        System.out.println("Welcome " + user.getName() + " (" + user.getRole() + ")");
+        //  Open menu for the logged-in user
+        System.out.println("Welcome " + loggedInUser.getName() +
+                " (" + loggedInUser.getRole() + ")");
 
         Menu menu = new Menu(users);
-        menu.showMainMenu(user);
+        menu.showMainMenu(loggedInUser);
     }
-
 }

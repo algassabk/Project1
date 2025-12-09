@@ -1,0 +1,4 @@
+id=C003
+name=Layla
+role=CUSTOMER
+passwordHash=MYruP+2MnQQNNaf8H6d2+zEwODOqLeiFNU3fPUTY+2k=

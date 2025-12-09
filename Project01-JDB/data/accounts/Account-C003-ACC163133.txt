@@ -1,0 +1,7 @@
+customerId=C003
+accountNumber=ACC163133
+accountType=Savings
+balance=400.0
+status=ACTIVE
+cardType=MastercardTitanium
+overdraftCount=0

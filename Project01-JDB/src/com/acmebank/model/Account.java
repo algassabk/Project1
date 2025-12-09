@@ -94,7 +94,7 @@ public abstract class Account implements StatementPrintable {
             throw new Exception("Withdraw amount must be positive.");
         }
 
-        //DAILY WITHDRAW LIMIT
+        // --- Daily limit check ---
         LocalDate today = LocalDate.now();
         if (withdrawDay == null || !today.equals(withdrawDay)) {
             withdrawDay = today;
@@ -106,27 +106,30 @@ public abstract class Account implements StatementPrintable {
             throw new Exception("Daily withdraw limit exceeded. Remaining for today: " + remainingLimit);
         }
 
-        //OVERDRAFT
         double newBalance = balance - amount;
 
         if (newBalance < 0) {
-            // apply overdraft fee
+            // Apply overdraft fee
             newBalance -= 35.0;
             overdraftCount++;
 
             if (newBalance < -100.0) {
+                // Do not allow going below -100 (more than 100 overdraw)
                 throw new Exception("Cannot overdraw more than $100.");
             }
 
             if (overdraftCount >= 2) {
                 active = false;
                 System.out.println("Account has been deactivated due to repeated overdrafts.");
+            } else {
+                System.out.println("Overdraft used. $35 fee applied.");
             }
         }
 
         balance = newBalance;
         withdrawTotalToday += amount;
     }
+
 
     //TRANSFER LIMIT HELPERS
     public void checkTransferLimit(double amount, boolean toOwnAccount) throws Exception {
@@ -188,27 +191,45 @@ public abstract class Account implements StatementPrintable {
     }
     @Override
     public void printStatement() {
-        System.out.println("\n=== ACCOUNT STATEMENT (from Account.printStatement) ===");
+        System.out.println("\n=== ACCOUNT STATEMENT ===");
         System.out.println("Account: " + accountType + " #" + accountNumber);
         System.out.printf("Current balance: %.2f%n", balance);
-
-        // load all transactions from file
-        var txs = TransactionFile.loadForAccount(accountNumber);
-        if (txs.isEmpty()) {
-            System.out.println("No transactions for this account yet.");
-            return;
-        }
-
-        System.out.println("Date & Time           | Type         | Amount   | Post-balance | Description");
-        System.out.println("--------------------------------------------------------------------------");
-        for (Transaction tx : txs) {
-            System.out.printf("%s | %-11s | %-8.2f | %-12.2f | %s%n",
-                    tx.getDateTime(),
-                    tx.getType(),
-                    tx.getAmount(),
-                    tx.getPostBalance(),
-                    tx.getDescription());
-        }
+        System.out.println("(Detailed transactions are shown from the menu.)");
     }
+
+//
+//    // Load ALL transactions for this customer
+//        List<Transaction> all = TransactionFile.loadForCustomer(owner.getId());
+//
+//        // Filter only those belonging to THIS account
+//        List<Transaction> txs = new ArrayList<>();
+//        for (Transaction tx : all) {
+//            String from = tx.getFromAccountNumber();
+//            String to = tx.getToAccountNumber();
+//
+//            if ((from != null && from.equals(accountNumber)) ||
+//                    (to != null && to.equals(accountNumber))) {
+//                txs.add(tx);
+//            }
+//        }
+//
+//        if (txs.isEmpty()) {
+//            System.out.println("No transactions for this account yet.");
+//            return;
+//        }
+//
+//        System.out.println("Date & Time        | Type         | Amount   | Post-balance | Description");
+//        System.out.println("--------------------------------------------------------------------------");
+//
+//        for (Transaction tx : txs) {
+//            System.out.printf("%s | %-11s | %-8.2f | %-12.2f | %s%n",
+//                    tx.getDateTime(),
+//                    tx.getType(),
+//                    tx.getAmount(),
+//                    tx.getPostBalance(),
+//                    tx.getDescription());
+//        }
+//    }
+
 
 }
