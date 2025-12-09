@@ -16,7 +16,7 @@ public class UserFile {
         }
     }
 
-    // ---------- File Names ----------
+    //File Names
     private static Path fileForCustomer(Customer c) {
         String fileName = "Customer-" + c.getName() + "-" + c.getId() + ".txt";
         return USERS_DIR.resolve(fileName);
@@ -27,7 +27,7 @@ public class UserFile {
         return USERS_DIR.resolve(fileName);
     }
 
-    // ---------- SAVE ----------
+    //SAVE
     public static void saveCustomer(Customer c) {
         try {
             ensureDir();
@@ -65,7 +65,7 @@ public class UserFile {
         }
     }
 
-    // ---------- LOAD ----------
+    //LOAD
     public static List<User> loadAllUsers() {
         List<User> users = new ArrayList<>();
 

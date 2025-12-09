@@ -41,7 +41,7 @@ public class Transaction {
     public double getPostBalance() { return postBalance; }
     public String getDescription() { return description; }
 
-    // ---------- FILE SAVE FORMAT ----------
+    //file save format
     public String toFileLine() {
         return transactionId + "|" +
                 (fromAccount == null ? "" : fromAccount) + "|" +

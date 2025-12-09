@@ -16,12 +16,10 @@ public class AccountFile {
     }
 
     private static Path fileForAccount(Customer owner, Account acc) {
-        // Example: Account-C001-ACC123456.txt
         String fileName = "Account-" + owner.getId() + "-" + acc.getAccountNumber() + ".txt";
         return ACCOUNTS_DIR.resolve(fileName);
     }
 
-    // ---------- SAVE ----------
     public static void saveAccountsForCustomer(Customer customer) {
         try {
             ensureDir();
@@ -46,7 +44,6 @@ public class AccountFile {
         }
     }
 
-    // ---------- LOAD ----------
     public static void loadAccounts(List<User> users) {
         if (!Files.exists(ACCOUNTS_DIR)) {
             return; // first run, no accounts yet

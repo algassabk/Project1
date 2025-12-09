@@ -45,7 +45,7 @@ public class AccountTest {
         assertTrue(acc.isActive());
     }
 
-    // --- 4) After two overdrafts, account becomes inactive ---
+    //After two overdrafts, account becomes inactive
     @Test
     public void testAccountDeactivatesAfterTwoOverdrafts() throws Exception {
         Account acc = createChecking(75.0);
@@ -63,22 +63,38 @@ public class AccountTest {
         assertFalse(acc.isActive());
     }
 
-    // --- 5) Deposit after overdrafts reactivates and resets overdraftCount ---
+    //deposit after overdrafts reactivates and resets overdraftCount
     @Test
     public void testAccountReactivatesAfterDeposit() throws Exception {
         Account acc = createChecking(75.0);
 
-        // Make two overdrafts to deactivate
+        //2 overdrafts to deactivate
         acc.withdraw(80.0);   // balance -40
         acc.withdraw(20.0);   // balance -95, overdraftCount=2, active=false
 
         assertFalse(acc.isActive());
 
-        // Deposit enough to go positive: -95 + 200 = 105
+        // deposit so >> positive: -95 + 200 = 105
         acc.deposit(200.0);
 
         assertTrue(acc.isActive());
         assertEquals(0, acc.getOverdraftCount());
         assertEquals(105.0, acc.getBalance(), 0.0001);
+    }
+
+    @Test
+    public void testDepositCannotExceedDailyLimit() throws Exception{
+        Account acc = new CheckingAccount("ACC002",0.0, CardType.Mastercard);
+
+        double limit = acc.getCardType().getDepositLimitPerDay();
+        acc.deposit(limit - 1000);
+        assertEquals(limit - 1000, acc.getBalance(), 0.0001);
+
+        try{
+            acc.deposit(2000);
+            fail("Expected exception for exceeding daily deposit limit");
+        } catch (Exception e){
+            assertTrue(e.getMessage().contains("Daily deposit limit exceeded"));
+        }
     }
 }

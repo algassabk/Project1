@@ -8,11 +8,11 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
 
-        // 1) Load users from files (if any)
+        // Load users from files
         List<User> users = UserFile.loadAllUsers();   // only ONCE
         AccountFile.loadAccounts(users);
 
-        // 2) If no users yet, create default banker + customer and save them
+        //if no users yet, create default banker + customer and save them
         if (users.isEmpty()) {
             System.out.println("No users found. Creating default banker and customer...");
 
@@ -22,7 +22,6 @@ public class Main {
             Customer customer = new Customer("C001", "Khadija", customerPwdHash);
             Banker banker     = new Banker("B001", "Ahmed", bankerPwdHash, "Main Branch");
 
-            // add a demo account so customer menu works
             CardType defaultCard = CardType.Mastercard;
             Account demoAccount = new CheckingAccount("ACC100001", 500.0, defaultCard);
             customer.addAccount(demoAccount);
@@ -38,7 +37,7 @@ public class Main {
         Login loginService = new Login(users);
 
         Scanner scanner = new Scanner(System.in);
-        System.out.println("=== ACME Bank Login ===");
+        System.out.println("   ACME Bank Login   ");
         System.out.print("Enter ID: ");
         String id = scanner.nextLine();
 

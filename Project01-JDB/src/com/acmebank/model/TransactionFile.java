@@ -17,12 +17,11 @@ public class TransactionFile {
     }
 
     private static Path fileForAccount(String accountNumber) {
-        // e.g. Transactions/Account-ACC100001.txt
         String fileName = "Account-" + accountNumber + ".txt";
         return TX_DIR.resolve(fileName);
     }
 
-    // ---------- SAVE ONE TRANSACTION ----------
+    //save 1 transaction
     public static void append(String accountNumber, Transaction tx) {
         try {
             ensureDir();
@@ -40,7 +39,7 @@ public class TransactionFile {
         }
     }
 
-    // ---------- LOAD ALL TRANSACTIONS FOR AN ACCOUNT ----------
+    // load all transactions to an account
     public static List<Transaction> loadForAccount(String accountNumber) {
         List<Transaction> result = new ArrayList<>();
         Path file = fileForAccount(accountNumber);

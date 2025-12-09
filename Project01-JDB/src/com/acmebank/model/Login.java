@@ -14,7 +14,7 @@ public class Login {
 
     public Optional<User> login(String id, String password) {
 
-        // 1) Find user by ID
+        //Find user by ID
         Optional<User> userOpt = users.stream()
                 .filter(u -> u.getId().equals(id))
                 .findFirst();
@@ -26,7 +26,7 @@ public class Login {
 
         User user = userOpt.get();
 
-        // 2) Check if account is locked
+        //Check if account is locked
         if (user.getLockUntil() != null) {
             LocalDateTime now = LocalDateTime.now();
             if (now.isBefore(user.getLockUntil())) {
@@ -39,7 +39,7 @@ public class Login {
             }
         }
 
-        // 3) Check password
+        //Check password
         boolean passwordMatches =
                 PasswordHelper.hash(password).equals(user.getEncryptedPassword());
 
@@ -57,7 +57,7 @@ public class Login {
             return Optional.empty();
         }
 
-        // 4) Success → reset counters
+        //Success so reset counters
         user.setFailedAttempts(0);
         user.setLockUntil(null);
 

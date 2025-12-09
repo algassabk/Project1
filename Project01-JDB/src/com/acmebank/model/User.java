@@ -9,7 +9,7 @@ public abstract class User {
     protected Role role;
     protected String encryptedPassword;
 
-    // 🔒 for fraud detection
+    //fraud detection
     protected int failedAttempts;
     protected LocalDateTime lockUntil;
 
@@ -36,7 +36,7 @@ public abstract class User {
         return encryptedPassword;
     }
 
-    // ====== fraud-detection support ======
+    //fraud detection support
     public int getFailedAttempts() {
         return failedAttempts;
     }
@@ -45,7 +45,7 @@ public abstract class User {
         this.failedAttempts = failedAttempts;
     }
 
-    public LocalDateTime getLockUntil() {       // ✅ use this name
+    public LocalDateTime getLockUntil() {
         return lockUntil;
     }
 

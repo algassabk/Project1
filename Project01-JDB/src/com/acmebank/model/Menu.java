@@ -29,7 +29,7 @@ public class Menu {
         }
     }
 
-    // ============= BANKER MENU =============
+    // BANKER MENU
     private void showBankerMenu(Banker banker) {
         while (true) {
             System.out.println("\n--- BANKER MENU ---");
@@ -74,7 +74,7 @@ public class Menu {
 
         Customer newCustomer = new Customer(id, name, hash);
 
-        // choose account type(s)
+        // choose account
         System.out.println("Select account option:");
         System.out.println("1. Checking only");
         System.out.println("2. Savings only");
@@ -147,7 +147,7 @@ public class Menu {
                 .forEach(c -> System.out.println(c.getId() + " - " + c.getName()));
     }
 
-    // ============= CUSTOMER MENU =============
+    // CUSTOMER MENU
     private void showCustomerMenu(Customer customer) {
         while (true) {
             System.out.println("\n--- CUSTOMER MENU ---");
@@ -194,7 +194,7 @@ public class Menu {
         printTransactions(txs);
     }
 
-    // ===== CUSTOMER ACTIONS =====
+    //CUSTOMER ACTIONS
 
     private Account selectAccount(Customer customer) {
         List<Account> accounts = customer.getAccounts();
@@ -333,7 +333,7 @@ public class Menu {
         double amount = readDouble();
 
         try {
-            // if transfer is to own account
+            // if transfer must  own account
             boolean isOwnAccount = customer.getAccounts().contains(toAccount);
             // check daily limits
             fromAccount.checkTransferLimit(amount, isOwnAccount);
@@ -344,7 +344,7 @@ public class Menu {
             fromAccount.recordTransferAmount(amount, isOwnAccount);
 
 
-            // placeholder for now – later we will record real Transaction objects
+
             recordTransfer(fromAccount, toAccount, amount);
 
             System.out.println("Transfer successful.");
@@ -410,7 +410,7 @@ public class Menu {
         Account account = selectAccount(customer);
         if (account == null) return;
 
-        // load from file so history survives restart
+        // load from file so history makes it to restart
         List<Transaction> all = TransactionFile.loadForAccount(account.getAccountNumber());
 
         if (all.isEmpty()) {
@@ -554,7 +554,7 @@ public class Menu {
 
 
 
-    // ============= HELPER METHODS =============
+    //HELPER METHODS
     private int readInt() {
         while (true) {
             try {

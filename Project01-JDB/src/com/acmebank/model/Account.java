@@ -20,8 +20,10 @@ public abstract class Account implements StatementPrintable {
     private LocalDate transferDay;
     private double transferTotalTodayOther;
     private double transferTotalTodayOwn;
+    private LocalDate depositDay;
+    private double depositTotalToday;
 
-    // transaction history in memory
+
     protected List<Transaction> transactions = new ArrayList<>();
 
     protected Account(String accountNumber, AccountType accountType,
@@ -32,7 +34,7 @@ public abstract class Account implements StatementPrintable {
         this.cardType = cardType;
     }
 
-    // ---------- BASIC GETTERS ----------
+ // getters
     public String getAccountNumber() {
         return accountNumber;
     }
@@ -53,21 +55,36 @@ public abstract class Account implements StatementPrintable {
         return cardType;
     }
 
-    // ---------- DEPOSIT / WITHDRAW WITH OVERDRAFT + REACTIVATION ----------
+
     public void deposit(double amount) throws Exception {
         if (amount <= 0) {
             throw new Exception("Deposit amount must be positive.");
         }
 
-        balance += amount;
+        // daily deposit limit
+        LocalDate today = LocalDate.now();
+        if (depositDay == null || !today.equals(depositDay)) {
+            depositDay = today;
+            depositTotalToday = 0;
+        }
 
-        // Reactivate account if overdraft is cleared
+        double remaining = cardType.getDepositLimitPerDay() - depositTotalToday;
+        if (amount > remaining) {
+            throw new Exception("Daily deposit limit exceeded. Remaining for today: " + remaining);
+        }
+
+        //apply deposit
+        balance += amount;
+        depositTotalToday += amount;
+
+      // reactivate acc
         if (!active && balance >= 0 && overdraftCount >= 2) {
             active = true;
             overdraftCount = 0; // reset overdraft history
             System.out.println("Account has been reactivated after clearing overdraft balance.");
         }
     }
+
 
     public void withdraw(double amount) throws Exception {
         if (!active) {
@@ -77,7 +94,7 @@ public abstract class Account implements StatementPrintable {
             throw new Exception("Withdraw amount must be positive.");
         }
 
-        // ---- DAILY WITHDRAW LIMIT ----
+        //DAILY WITHDRAW LIMIT
         LocalDate today = LocalDate.now();
         if (withdrawDay == null || !today.equals(withdrawDay)) {
             withdrawDay = today;
@@ -89,7 +106,7 @@ public abstract class Account implements StatementPrintable {
             throw new Exception("Daily withdraw limit exceeded. Remaining for today: " + remainingLimit);
         }
 
-        // ---- OVERDRAFT LOGIC ----
+        //OVERDRAFT
         double newBalance = balance - amount;
 
         if (newBalance < 0) {
@@ -111,7 +128,7 @@ public abstract class Account implements StatementPrintable {
         withdrawTotalToday += amount;
     }
 
-    // ---------- TRANSFER LIMIT HELPERS ----------
+    //TRANSFER LIMIT HELPERS
     public void checkTransferLimit(double amount, boolean toOwnAccount) throws Exception {
         LocalDate today = LocalDate.now();
 
@@ -142,7 +159,7 @@ public abstract class Account implements StatementPrintable {
         }
     }
 
-    // ---------- TRANSACTION HISTORY ----------
+    // TRANSACTION HISTORY
     public List<Transaction> getTransactions() {
         return transactions;
     }
@@ -151,7 +168,7 @@ public abstract class Account implements StatementPrintable {
         transactions.add(tx);
     }
 
-    // ---------- SUPPORT FOR FILE SAVE/LOAD ----------
+    //SUPPORT FOR FILE
     public int getOverdraftCount() {
         return overdraftCount;
     }
@@ -164,7 +181,7 @@ public abstract class Account implements StatementPrintable {
         this.active = active;
     }
 
-    // ---------- DEBUG ----------
+    //DEBUG
     @Override
     public String toString() {
         return accountType + " #" + accountNumber + " (balance=" + balance + ")";
