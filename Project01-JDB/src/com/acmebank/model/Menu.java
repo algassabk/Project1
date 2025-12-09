@@ -184,7 +184,7 @@ public class Menu {
         // Load ALL transactions for this customer
         List<Transaction> all = TransactionFile.loadForCustomer(customer.getId());
 
-        // Filter only transactions belonging to THIS account
+        // Filter only transactions belonging to this account
         List<Transaction> txs = new ArrayList<>();
         String accNo = account.getAccountNumber();
 
@@ -263,13 +263,8 @@ public class Menu {
             account.deposit(amount);
 
             Transaction tx = new Transaction(
-                    generateTransactionId(),
-                    null,
-                    account.getAccountNumber(),
-                    LocalDateTime.now(),
-                    TransactionType.Deposit,
-                    amount,
-                    account.getBalance(),
+                    generateTransactionId(), null, account.getAccountNumber(),
+                    LocalDateTime.now(), TransactionType.Deposit, amount, account.getBalance(),
                     "Deposit"
             );
             account.addTransaction(tx);
@@ -298,14 +293,8 @@ public class Menu {
             account.withdraw(amount);
 
             Transaction tx = new Transaction(
-                    generateTransactionId(),
-                    account.getAccountNumber(),
-                    null,
-                    LocalDateTime.now(),
-                    TransactionType.Withdraw,
-                    amount,
-                    account.getBalance(),
-                    "Withdraw"
+                    generateTransactionId(), account.getAccountNumber(), null, LocalDateTime.now(),
+                    TransactionType.Withdraw, amount, account.getBalance(), "Withdraw"
             );
             account.addTransaction(tx);
 
@@ -419,7 +408,7 @@ public class Menu {
         return selectAccountWithoutBalance(otherCustomer);
     }
 
-    // Use this when selecting an account that belongs to ANOTHER customer (privacy: no balance)
+    // Use this when selecting an account that belongs to ANOTHER customer
     private Account selectAccountWithoutBalance(Customer customer) {
         List<Account> accounts = customer.getAccounts();
         if (accounts.isEmpty()) {
@@ -434,7 +423,7 @@ public class Menu {
         for (int i = 0; i < accounts.size(); i++) {
             Account acc = accounts.get(i);
             System.out.println((i + 1) + ". " + acc.getAccountType() +
-                    " #" + acc.getAccountNumber());   // 👈 no balance printed here
+                    " #" + acc.getAccountNumber());   //  no balance printed here
         }
         System.out.print("Choice: ");
         int choice = readInt();
@@ -455,7 +444,7 @@ public class Menu {
         List<Transaction> all = TransactionFile.loadForCustomer(customer.getId());
         String accNo = account.getAccountNumber();
 
-        // Filter only this account’s transactions
+        // Filter only this accounts transactions
         List<Transaction> accountTx = new ArrayList<>();
         for (Transaction tx : all) {
             String from = tx.getFromAccountNumber();
@@ -554,8 +543,6 @@ public class Menu {
             }
         }
     }
-
-
 
 
 

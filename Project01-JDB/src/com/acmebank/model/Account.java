@@ -94,7 +94,7 @@ public abstract class Account implements StatementPrintable {
             throw new Exception("Withdraw amount must be positive.");
         }
 
-        // --- Daily limit check ---
+        //daily limit check
         LocalDate today = LocalDate.now();
         if (withdrawDay == null || !today.equals(withdrawDay)) {
             withdrawDay = today;
@@ -196,40 +196,5 @@ public abstract class Account implements StatementPrintable {
         System.out.printf("Current balance: %.2f%n", balance);
         System.out.println("(Detailed transactions are shown from the menu.)");
     }
-
-//
-//    // Load ALL transactions for this customer
-//        List<Transaction> all = TransactionFile.loadForCustomer(owner.getId());
-//
-//        // Filter only those belonging to THIS account
-//        List<Transaction> txs = new ArrayList<>();
-//        for (Transaction tx : all) {
-//            String from = tx.getFromAccountNumber();
-//            String to = tx.getToAccountNumber();
-//
-//            if ((from != null && from.equals(accountNumber)) ||
-//                    (to != null && to.equals(accountNumber))) {
-//                txs.add(tx);
-//            }
-//        }
-//
-//        if (txs.isEmpty()) {
-//            System.out.println("No transactions for this account yet.");
-//            return;
-//        }
-//
-//        System.out.println("Date & Time        | Type         | Amount   | Post-balance | Description");
-//        System.out.println("--------------------------------------------------------------------------");
-//
-//        for (Transaction tx : txs) {
-//            System.out.printf("%s | %-11s | %-8.2f | %-12.2f | %s%n",
-//                    tx.getDateTime(),
-//                    tx.getType(),
-//                    tx.getAmount(),
-//                    tx.getPostBalance(),
-//                    tx.getDescription());
-//        }
-//    }
-
 
 }

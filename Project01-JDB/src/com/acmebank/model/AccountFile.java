@@ -46,7 +46,7 @@ public class AccountFile {
 
     public static void loadAccounts(List<User> users) {
         if (!Files.exists(ACCOUNTS_DIR)) {
-            return; // first run, no accounts yet
+            return; // first run with no account
         }
 
         try (DirectoryStream<Path> stream =
