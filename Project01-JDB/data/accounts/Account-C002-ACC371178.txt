@@ -1,7 +1,7 @@
 customerId=C002
 accountNumber=ACC371178
 accountType=Checking
-balance=110.0
+balance=60.0
 status=ACTIVE
 cardType=Mastercard
 overdraftCount=0

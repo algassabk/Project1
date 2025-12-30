@@ -90,11 +90,12 @@ public abstract class Account implements StatementPrintable {
         if (!active) {
             throw new Exception("Account is deactivated.");
         }
+
         if (amount <= 0) {
             throw new Exception("Withdraw amount must be positive.");
         }
 
-        //daily limit check
+        // Daily limit reset
         LocalDate today = LocalDate.now();
         if (withdrawDay == null || !today.equals(withdrawDay)) {
             withdrawDay = today;
@@ -103,32 +104,35 @@ public abstract class Account implements StatementPrintable {
 
         double remainingLimit = cardType.getWithdrawLimitPerDay() - withdrawTotalToday;
         if (amount > remainingLimit) {
-            throw new Exception("Daily withdraw limit exceeded. Remaining for today: " + remainingLimit);
+            throw new Exception(
+                    "Daily withdraw limit exceeded. Remaining for today: " + remainingLimit
+            );
         }
 
         double newBalance = balance - amount;
 
-        if (newBalance < 0) {
-            // Apply overdraft fee
-            newBalance -= 35.0;
-            overdraftCount++;
 
-            if (newBalance < -100.0) {
-                // Do not allow going below -100 (more than 100 overdraw)
-                throw new Exception("Cannot overdraw more than $100.");
+        if (newBalance < -100) {
+            throw new Exception("Cannot overdraw more than $100.");
+        }
+
+        if (newBalance < 0) {
+            newBalance -= 35.0;
+
+            // Count overdraft only when crossing negative
+            if (balance >= 0) {
+                overdraftCount++;
             }
 
             if (overdraftCount >= 2) {
                 active = false;
-                System.out.println("Account has been deactivated due to repeated overdrafts.");
-            } else {
-                System.out.println("Overdraft used. $35 fee applied.");
             }
         }
 
         balance = newBalance;
         withdrawTotalToday += amount;
     }
+
 
 
     //TRANSFER LIMIT HELPERS

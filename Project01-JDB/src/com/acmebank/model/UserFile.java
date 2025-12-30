@@ -7,8 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserFile {
+    private static final Path USERS_DIR =
+            Paths.get("Project01-JDB", "data", "users");
 
-    private static final Path USERS_DIR = Paths.get("data", "users");
 
     private static void ensureDir() throws IOException {
         if (!Files.exists(USERS_DIR)) {
