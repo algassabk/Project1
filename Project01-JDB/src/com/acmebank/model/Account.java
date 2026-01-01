@@ -78,9 +78,9 @@ public abstract class Account implements StatementPrintable {
         depositTotalToday += amount;
 
       // reactivate acc
-        if (!active && balance >= 0 && overdraftCount >= 2) {
-            active = true;
+        if (balance > 0 ) {
             overdraftCount = 0; // reset overdraft history
+            active = true;
             System.out.println("Account has been reactivated after clearing overdraft balance.");
         }
     }
