@@ -13,8 +13,8 @@ public class TransactionTest {
                 LocalDateTime.now(), TransactionType.Transfer_out, 100, 500, "Test Transfer out");
 
         assertEquals("TX001", tx.getTransactionId());
-        assertEquals("ACC001", tx.getFromAccount());
-        assertEquals("ACC002", tx.getToAccount());
+        assertEquals("ACC001", tx.getFromAccountNumber());
+        assertEquals("ACC002", tx.getToAccountNumber());
         assertEquals(100, tx.getAmount(), 0.0001);
         assertEquals(TransactionType.Transfer_out, tx.getType());
     }

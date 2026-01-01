@@ -120,9 +120,7 @@ public abstract class Account implements StatementPrintable {
             newBalance -= 35.0;
 
             // Count overdraft only when crossing negative
-            if (balance >= 0) {
-                overdraftCount++;
-            }
+            overdraftCount++;
 
             if (overdraftCount >= 2) {
                 active = false;
