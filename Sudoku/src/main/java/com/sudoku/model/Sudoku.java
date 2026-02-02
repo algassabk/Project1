@@ -24,7 +24,7 @@ public class Sudoku {
         return board;
     }
 
-    // reads file of 81 numbers (0-9) separated by spaces
+    // reads file (supports '.' or '0' for empty), supports '|' and dashed separators
     public void loadFromFile(String filePath) {
         File f = new File(filePath);
         if (!f.exists()) {
@@ -49,11 +49,26 @@ public class Sudoku {
                 for (String p : parts) {
                     if (p.isBlank()) continue;
 
-                    if (!p.matches("[0-9]")) {
-                        throw new InvalidCharacterException("Invalid token '" + p + "' in file: " + filePath);
+                    int v;
+
+                    // '.' means empty cell
+                    if (p.equals(".")) {
+                        v = 0;
+                    }
+                    // allow '0' as empty cell too (optional)
+                    else if (p.equals("0")) {
+                        v = 0;
+                    }
+                    // allow digits 1–9
+                    else if (p.matches("[1-9]")) {
+                        v = Integer.parseInt(p);
+                    } else {
+                        throw new InvalidCharacterException(
+                                "Invalid token '" + p + "' in file: " + filePath
+                        );
                     }
 
-                    int v = Integer.parseInt(p);
+                    // range check (extra safety)
                     if (v < 0 || v > 9) {
                         throw new InvalidCharacterException("Value out of range: " + v);
                     }
@@ -79,16 +94,27 @@ public class Sudoku {
         }
     }
 
+    // ✅ NEW: solution output with grids (numbers only, no dots)
+    public String toSolutionAscii() {
+        StringBuilder out = new StringBuilder();
+        for (int r = 0; r < SIZE; r++) {
+            if (r != 0 && r % 3 == 0) {
+                out.append("----------------------------------\n\n");
+            }
+            for (int c = 0; c < SIZE; c++) {
+                if (c != 0 && c % 3 == 0) out.append("|  ");
+                int v = board[r][c].getValue();
+                out.append(v).append("  ");
+            }
+            out.append("\n");
+        }
+        return out.toString();
+    }
+
+    // ✅ UPDATED: save solution using grid format
     public void saveSolutionToFile(String outputPath) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(outputPath))) {
-            for (int r = 0; r < SIZE; r++) {
-                StringBuilder sb = new StringBuilder();
-                for (int c = 0; c < SIZE; c++) {
-                    sb.append(board[r][c].getValue());
-                    if (c < SIZE - 1) sb.append(" ");
-                }
-                pw.println(sb);
-            }
+            pw.print(toSolutionAscii());
         } catch (IOException e) {
             throw new RuntimeException("Failed to write file: " + outputPath, e);
         }
@@ -108,6 +134,7 @@ public class Sudoku {
         return m;
     }
 
+    // current board as ASCII (shows '.' for empty)
     public String toAscii() {
         StringBuilder out = new StringBuilder();
         for (int r = 0; r < SIZE; r++) {
@@ -116,7 +143,8 @@ public class Sudoku {
             }
             for (int c = 0; c < SIZE; c++) {
                 if (c != 0 && c % 3 == 0) out.append(" | ");
-                out.append(board[r][c].getValue()).append("  ");
+                int v = board[r][c].getValue();
+                out.append(v == 0 ? "." : v).append("  ");
             }
             out.append("\n");
         }
